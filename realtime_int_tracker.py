@@ -1,7 +1,6 @@
 from tkinter import *
 from netmiko import ConnectHandler
 from customtkinter import *
-import time 
 set_appearance_mode("System")
 set_default_color_theme("green")
 
@@ -25,6 +24,7 @@ font = {'family': 'Times New Roman',
         'size': 22
         }
 int_table = {}
+ints_command = ""
 
 class ScrollableInterfaceFrame(CTkScrollableFrame):
     def __init__(self, master, **kwargs):
@@ -53,46 +53,46 @@ def onChange():
     else:
         pause_button.configure(
             text="Pause", fg_color="#c74c3c", hover_color="#9c2b1c")
-        window.after(10,update_table)
+        window.after(3000,update_table)
 
 def update_table():
-    scrollable_interface_frame = ScrollableInterfaceFrame(window, width=500, corner_radius=0)
-    scrollable_interface_frame.place(relx=0.6, rely=0.25, anchor=CENTER)
-        #for k,v in int_table.items(): 
-        #    scrollable_interface_frame.remove_int(f"{k}                download: {v[0]} bits/sec                upload: {v[1]} bits/sec")
+    global int_table
+    scrollable_interface_frame = ScrollableInterfaceFrame(window, width=500, height=500, corner_radius=5)
+    scrollable_interface_frame.place(relx=0.6, rely=0.4, anchor=CENTER)
+    for i,line in enumerate(ints_command):
+        if "Gigabit" in line:
+            int_table[line[0:21]] = [ints_command[i+1].split()[4],ints_command[i+2].split()[4]]
     for k,v in int_table.items():  # add all current ints
-        scrollable_interface_frame.add_int(f"{k}                download: {v[0]} bits/sec                upload: {v[1]} bits/sec")
+        scrollable_interface_frame.add_int(f"{k}               RX: {v[0]} bits/sec              TX: {v[1]} bits/sec")
     if not pause:
-        window.after(10, update_table)
+        window.after(3000, update_table)
 
 def onStart():
     ios_l2['ip'] = device_ip.get()
     ios_l2['username'] = device_username.get()
     ios_l2['password'] = device_password.get()
     ssh = ConnectHandler(**ios_l2)
-    try:
-        ints_command = ssh.send_command(f"sh int | i up | rate")
-        getspeed = getspeed.split("\n")
-        for i,line in enumerate(getspeed):
-            if "Gigabit" in line:
-                int_table[line[0:22]] = [getspeed[i+1].split()[4],getspeed[i+2].split()[4]]
-            
-        global pause_button
-        pause_button = CTkButton(
-            window, text="Pause Tracking", command=onChange, fg_color="#c74c3c", hover_color="#9c2b1c")
-        pause_button.place(relx=0.2, rely=0.8, anchor=CENTER)
-
-        exit_button = CTkButton(
+    #try:
+    global ints_command
+    ints_command = ssh.send_command(f"sh int | i up | rate")
+    ints_command = ints_command.split("\n")
+    print(ints_command)
+    print(int_table)
+    global pause_button
+    pause_button = CTkButton(
+        window, text="Pause Tracking", command=onChange, fg_color="#c74c3c", hover_color="#9c2b1c")        
+    pause_button.place(relx=0.2, rely=0.8, anchor=CENTER)
+    exit_button = CTkButton(
             window, text="Stop Tracking", command=onChange, fg_color="#c74c3c", hover_color="#9c2b1c")
-        exit_button.place(relx=0.4, rely=0.8, anchor=CENTER)
-        if not pause:
-            window.after(10,update_table)
-            
+    exit_button.place(relx=0.4, rely=0.8, anchor=CENTER)
+    if not pause:
+        window.after(3000,update_table)
+    """          
     except KeyboardInterrupt:
         print('Interrupted by user')
     except:
         print('error found at', device_ip)
-
+    """
 greeting = CTkLabel(window, text="Load Device and Track Speed using Graph")
 greeting.place(relx=0.2, rely=0.1, anchor=CENTER)
 
@@ -120,10 +120,8 @@ device_password.place(relx=0.2, rely=0.4, anchor=CENTER)
 load_button = CTkButton(window, text="Start Tracking", command=onStart,
                         fg_color="#119149", hover_color="#45ba78")
 load_button.place(relx=0.2, rely=0.5, anchor=CENTER)
-
-scrollable_interface_frame = ScrollableInterfaceFrame(window, width=500, corner_radius=0)
-scrollable_interface_frame.place(relx=0.6, rely=0.25, anchor=CENTER)
-int_table["g1/0/1"][1] += 1
+scrollable_interface_frame = ScrollableInterfaceFrame(window, width=500, height=500, corner_radius=5)
+scrollable_interface_frame.place(relx=0.6, rely=0.4, anchor=CENTER)
 
 for k,v in int_table.items():  # add all current ints
     scrollable_interface_frame.add_int(f"{k}                download: {v[0]} bits/sec                upload: {v[1]} bits/sec")
