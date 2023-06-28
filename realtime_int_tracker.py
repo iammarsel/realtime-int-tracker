@@ -25,7 +25,7 @@ font = {'family': 'Times New Roman',
         }
 int_table = {}
 ints_command = ""
-
+ssh = ""
 class ScrollableInterfaceFrame(CTkScrollableFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
@@ -56,18 +56,22 @@ def onChange():
         window.after(3000,update_table)
 
 def update_table():
-    global int_table
+    global int_table, ssh
+    ints_command = ssh.send_command(f"sh int | i up | rate")
+    ints_command = ints_command.split("\n")
     scrollable_interface_frame = ScrollableInterfaceFrame(window, width=500, height=500, corner_radius=5)
     scrollable_interface_frame.place(relx=0.6, rely=0.4, anchor=CENTER)
     for i,line in enumerate(ints_command):
         if "Gigabit" in line:
-            int_table[line[0:21]] = [ints_command[i+1].split()[4],ints_command[i+2].split()[4]]
+            rx,tx = ints_command[i+1].split()[4],ints_command[i+2].split()[4]
+            int_table[line[0:21]] = [rx,tx]
     for k,v in int_table.items():  # add all current ints
-        scrollable_interface_frame.add_int(f"{k}               RX: {v[0]} bits/sec              TX: {v[1]} bits/sec")
+        scrollable_interface_frame.add_int(f"{k}               RX: {v[0]:,} bits/sec              TX: {v[1]:,} bits/sec")
     if not pause:
         window.after(3000, update_table)
 
 def onStart():
+    global ssh
     ios_l2['ip'] = device_ip.get()
     ios_l2['username'] = device_username.get()
     ios_l2['password'] = device_password.get()
