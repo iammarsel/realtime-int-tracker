@@ -23,8 +23,8 @@ font = {'family': 'Times New Roman',
         'weight': 'bold',
         'size': 22
         }
-int_table = {}
-ints_command = ""
+int_table = {"1":[4,2],"2":[1,1],"3":[9,9]}
+ints_command = "" 
 ssh = ""
 class ScrollableInterfaceFrame(CTkScrollableFrame):
     def __init__(self, master, **kwargs):
@@ -70,24 +70,36 @@ def update_table():
     if not pause:
         window.after(3000, update_table)
 
-def onStart():
-    global ssh
+def create_window():
+    ios_l2['ip'] = device_ip.get()
+    ios_l2['username'] = device_username.get()
+    ios_l2['password'] = device_password.get()
+    ssh = ""
+    try:
+        ssh = ConnectHandler(**ios_l2)
+        ints_command = ssh.send_command(f"sh int | i up | rate")
+        ints_command = ints_command.split("\n")
+        newWindow = Toplevel(window)
+        newWindow.title(ios_l2['ip'])
+        newWindow.geometry("700x700")
+        scrollable_interface_frame = ScrollableInterfaceFrame(window, width=500, height=500, corner_radius=5)
+        scrollable_interface_frame.place(relx=0.6, rely=0.4, anchor=CENTER)
+        window.after(3000,update_table)
+    except:
+        print("error creating a table")
+        return
+    
     ios_l2['ip'] = device_ip.get()
     ios_l2['username'] = device_username.get()
     ios_l2['password'] = device_password.get()
     ssh = ConnectHandler(**ios_l2)
     #try:
-    global ints_command
     ints_command = ssh.send_command(f"sh int | i up | rate")
     ints_command = ints_command.split("\n")
     print(ints_command)
     print(int_table)
     global pause_button
-    pause_button = CTkButton(
-        window, text="Pause Tracking", command=onChange, fg_color="#c74c3c", hover_color="#9c2b1c")        
-    pause_button.place(relx=0.2, rely=0.8, anchor=CENTER)
-    exit_button = CTkButton(
-            window, text="Stop Tracking", command=onChange, fg_color="#c74c3c", hover_color="#9c2b1c")
+    exit_button = CTkButton(newWindow, text="Stop Tracking", command=onChange, fg_color="#c74c3c", hover_color="#9c2b1c")
     exit_button.place(relx=0.4, rely=0.8, anchor=CENTER)
     if not pause:
         window.after(3000,update_table)
@@ -121,15 +133,7 @@ device_password = CTkEntry(window, placeholder_text="Password", show="*",
                            corner_radius=10)
 device_password.place(relx=0.2, rely=0.4, anchor=CENTER)
 
-load_button = CTkButton(window, text="Start Tracking", command=onStart,
+load_button = CTkButton(window, text="Start Tracking", command=create_window,
                         fg_color="#119149", hover_color="#45ba78")
 load_button.place(relx=0.2, rely=0.5, anchor=CENTER)
-scrollable_interface_frame = ScrollableInterfaceFrame(window, width=500, height=500, corner_radius=5)
-scrollable_interface_frame.place(relx=0.6, rely=0.4, anchor=CENTER)
-
-for k,v in int_table.items():  # add all current ints
-    scrollable_interface_frame.add_int(f"{k}                download: {v[0]} bits/sec                upload: {v[1]} bits/sec")
-
-
-
 window.mainloop()
