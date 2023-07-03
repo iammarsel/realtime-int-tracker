@@ -26,29 +26,23 @@ class Table:
                 e.insert(END, data[i][j])
 
 
-def update_window(win,values):
-    for i in range(len(values)):
-        for j in range(len(values[0])):
-            if type(values[i][j]) == int:
-                values[i][j] += 5
-                print('hi')
-    t = Table(win, values)
-    window.after(int(update_timer.get())*1000,update_window,win,values)
+def update_window(win,ssh):
+    data_list = []
+    ints_command = ssh.send_command("sh int | i up | rate")
+    ints_command = ints_command.split("\n")
+    for i, line in enumerate(ints_command):
+        if "Gigabit" in line:
+            rx, tx = ints_command[i+1].split()[4], ints_command[i+2].split()[4]
+            data_list.append([line[0:21], rx, tx])
+    t = Table(win, data_list)
+    window.after(int(update_timer.get())*1000,update_window,win,ssh)
 def create_window():
         try:
             newWindow = CTkToplevel(window)
             newWindow.title(ios_l2['ip'])
             newWindow.geometry("750x750")
-            data_list = []
-            ints_command = ssh.send_command("sh int | i up | rate")
-            ints_command = ints_command.split("\n")
-            for i, line in enumerate(ints_command):
-                if "Gigabit" in line:
-                    rx, tx = ints_command[i+1].split()[4], ints_command[i+2].split()[4]
-                    data_list.append([line[0:21], rx, tx])
-            
-            t = Table(newWindow, data_list)
-            update_window(newWindow,data_list)
+            ssh = ConnectHandler(**ios_l2)
+            update_window(newWindow,ssh)
         except Exception as e:
             print(f"An error occurred: {str(e)}")
         
@@ -57,10 +51,6 @@ def newTrack():
     ios_l2['ip'] = device_ip.get()
     ios_l2['username'] = device_username.get()
     ios_l2['password'] = device_password.get()
-    global ssh
-    #ssh = ConnectHandler(**ios_l2)
-
-    global values
     threading.Thread(target=create_window).start()
 
 window = CTk()
