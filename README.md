@@ -23,7 +23,7 @@ The way to test this project would be to clone this project, install dependencie
 
 1. Clone this project
 2. Install Python and required dependencing through pip, which are tkinter, matplotlib, numpy, customtkinter
-3. Run the application and input the required data, including IP, username, password, and the update time.
+3. Run the realtime_int_tracker_final.py file and input the required data, including IP, username, password, and the update time.
 ## How to tweak this project for your own uses
 
 Connect the same way as shown in the demo!
